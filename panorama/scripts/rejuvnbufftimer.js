@@ -93,6 +93,7 @@
       cachedScreenHeight = activeHeight;
       const scaleX = activeWidth / BASE_SCREEN_WIDTH;
       const scaleY = activeHeight / BASE_SCREEN_HEIGHT;
+      const uniformScale = Math.min(scaleX, scaleY);
 
       const panelDescriptors = [
         { id: "BuffHUD", x: -870, y: 90 },
@@ -107,7 +108,7 @@
           continue;
         }
 
-        targetPanel.style.transform = `translate3d(${descriptor.x * scaleX}px, ${descriptor.y * scaleY}px, 0px)`;
+        targetPanel.style.transform = `translate3d(${descriptor.x * uniformScale}px, ${descriptor.y * uniformScale}px, 0px)`;
       }
     }
 
