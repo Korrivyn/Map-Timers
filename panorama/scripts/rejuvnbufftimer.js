@@ -91,13 +91,12 @@
       const activeHeight = GetScreenHeight();
       cachedScreenWidth = activeWidth;
       cachedScreenHeight = activeHeight;
-      const scaleX = activeWidth / BASE_SCREEN_WIDTH;
       const scaleY = activeHeight / BASE_SCREEN_HEIGHT;
-      const uniformScale = Math.min(scaleX, scaleY);
+      const horizontalDelta = (activeWidth - BASE_SCREEN_WIDTH) / 2;
 
       const panelDescriptors = [
-        { id: "BuffHUD", x: -870, y: 90 },
-        { id: "RejuvHUD", x: 870, y: 90 }
+        { id: "BuffHUD", x: -870, y: 90, anchor: "right" },
+        { id: "RejuvHUD", x: 870, y: 90, anchor: "left" }
       ];
 
       for (const descriptor of panelDescriptors) {
@@ -108,7 +107,18 @@
           continue;
         }
 
-        targetPanel.style.transform = `translate3d(${descriptor.x * uniformScale}px, ${descriptor.y * uniformScale}px, 0px)`;
+        // Adjust the horizontal translation so the timers stay centered relative to the screen width.
+        let translatedX = descriptor.x;
+        if (descriptor.anchor === "left") {
+          // Expand rightward when the resolution grows and retract when it shrinks.
+          translatedX = descriptor.x + horizontalDelta;
+        } else if (descriptor.anchor === "right") {
+          // Move leftward from the right edge to mirror the left panel's offset.
+          translatedX = descriptor.x - horizontalDelta;
+        }
+
+        const translatedY = descriptor.y * scaleY;
+        targetPanel.style.transform = `translate3d(${translatedX}px, ${translatedY}px, 0px)`;
       }
     }
 
