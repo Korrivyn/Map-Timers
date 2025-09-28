@@ -12,6 +12,12 @@
   const BASE_SCREEN_HEIGHT = 1080;
 
   const PREFERRED_GAME_TIME_IDS = ["HudGameTime", "GameTime", "MainGameTime"];
+  const BASE_LEFT_TIMER_TRANSLATE = 870;
+  const BASE_RIGHT_TIMER_TRANSLATE = -870;
+  const BASE_TIMER_VERTICAL_TRANSLATE = 90;
+  const LEFT_BASE_OFFSET = BASE_SCREEN_WIDTH * 0.5 - BASE_LEFT_TIMER_TRANSLATE;
+  const RIGHT_BASE_OFFSET = BASE_SCREEN_WIDTH + BASE_RIGHT_TIMER_TRANSLATE - BASE_SCREEN_WIDTH * 0.5;
+  const CENTERLINE_OFFSET = (LEFT_BASE_OFFSET + RIGHT_BASE_OFFSET) / 2;
 
   const SEQ = [
     { name: "initial", dur: 600, num: "1" },
@@ -87,16 +93,20 @@
 
     // Applies resolution-aware translations and scaling to the timer panels.
     function ApplyResolutionScaling() {
-      const activeWidth = GetScreenWidth();
-      const activeHeight = GetScreenHeight();
-      cachedScreenWidth = activeWidth;
-      cachedScreenHeight = activeHeight;
-      const scaleY = activeHeight / BASE_SCREEN_HEIGHT;
-      const horizontalDelta = (activeWidth - BASE_SCREEN_WIDTH) / 2;
+      const dimensions = GetLayoutDimensions();
+      const layoutWidth = dimensions.width;
+      const layoutHeight = dimensions.height;
+      cachedScreenWidth = layoutWidth;
+      cachedScreenHeight = layoutHeight;
+      const halfWidth = layoutWidth * 0.5;
+      const verticalScale = layoutHeight / BASE_SCREEN_HEIGHT;
+      const translatedY = BASE_TIMER_VERTICAL_TRANSLATE * verticalScale;
+      const leftTranslation = halfWidth - CENTERLINE_OFFSET;
+      const rightTranslation = CENTERLINE_OFFSET - halfWidth;
 
       const panelDescriptors = [
-        { id: "BuffHUD", x: -870, y: 90, anchor: "right" },
-        { id: "RejuvHUD", x: 870, y: 90, anchor: "left" }
+        { id: "BuffHUD", translateX: rightTranslation },
+        { id: "RejuvHUD", translateX: leftTranslation }
       ];
 
       for (const descriptor of panelDescriptors) {
@@ -107,18 +117,7 @@
           continue;
         }
 
-        // Adjust the horizontal translation so the timers stay centered relative to the screen width.
-        let translatedX = descriptor.x;
-        if (descriptor.anchor === "left") {
-          // Expand rightward when the resolution grows and retract when it shrinks.
-          translatedX = descriptor.x + horizontalDelta;
-        } else if (descriptor.anchor === "right") {
-          // Move leftward from the right edge to mirror the left panel's offset.
-          translatedX = descriptor.x - horizontalDelta;
-        }
-
-        const translatedY = descriptor.y * scaleY;
-        targetPanel.style.transform = `translate3d(${translatedX}px, ${translatedY}px, 0px)`;
+        targetPanel.style.transform = `translate3d(${descriptor.translateX}px, ${translatedY}px, 0px)`;
       }
     }
 
@@ -134,8 +133,9 @@
 
     // Periodically applies scaling updates whenever the resolution differs.
     function ResolutionWatchTick() {
-      const currentWidth = GetScreenWidth();
-      const currentHeight = GetScreenHeight();
+      const currentDimensions = GetLayoutDimensions();
+      const currentWidth = currentDimensions.width;
+      const currentHeight = currentDimensions.height;
       let nextDelay = 0.5;
 
       // Refresh the layout when the resolution has changed.
@@ -147,6 +147,16 @@
       }
 
       resolutionWatchHandle = $.Schedule(nextDelay, ResolutionWatchTick);
+    }
+
+    // Provides the actual layout width with safe fallbacks.
+    function GetLayoutDimensions() {
+      // Use the post-layout size when Panorama has completed measurement.
+      if (root && root.actuallayoutwidth > 0 && root.actuallayoutheight > 0) {
+        return { width: root.actuallayoutwidth, height: root.actuallayoutheight };
+      }
+
+      return { width: GetScreenWidth(), height: GetScreenHeight() };
     }
 
     // Provides the active screen width with a safe fallback value.
