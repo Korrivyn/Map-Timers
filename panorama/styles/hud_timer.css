@@ -166,42 +166,42 @@
 
 #BuffHUD
 {
-	background-color: #00000030;
-	width: 3.5%;
-	height: 4.2%;
-	margin-top: -3.75%;
-	margin-right: 1.2%;
-	vertical-align: top;
-	horizontal-align: right;
-	perspective: 900;
-	opacity: 1;
-	transition-property: width,height;
-	transition-duration: 0.15s;
-	world-blur: ingameHudBlur;
-	z-index: -1;
-	transform: translate3d(-870px, 90px, 0px);
-	border-top-right-radius: 12px;
-	border-bottom-right-radius: 12px;
+        background-color: #00000030;
+        width: 3.5%;
+        height: 4.2%;
+        margin-top: -3.75%;
+        margin-right: 0%;
+        vertical-align: top;
+        horizontal-align: center;
+        perspective: 900;
+        opacity: 1;
+        transition-property: width,height;
+        transition-duration: 0.15s;
+        world-blur: ingameHudBlur;
+        z-index: -1;
+        transform: translate3d(50%, 90px, 0px);
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
 }
 
 #RejuvHUD
 {
-	background-color: #00000030;
-	width: 3.5%;
-	height: 4.2%;
-	margin-top: -3.75%;
-	margin-left: 1.2%;
-	vertical-align: top;
-	horizontal-align: left;
-	perspective: 900;
-	opacity: 1;
-	transition-property: width,height;
-	transition-duration: 0.15s;
-	world-blur: ingameHudBlur;
-	z-index: -1;
-	transform: translate3d(870px, 90px, 0px);
-	border-top-left-radius: 12px;
-	border-bottom-left-radius: 12px;
+        background-color: #00000030;
+        width: 3.5%;
+        height: 4.2%;
+        margin-top: -3.75%;
+        margin-left: 0%;
+        vertical-align: top;
+        horizontal-align: center;
+        perspective: 900;
+        opacity: 1;
+        transition-property: width,height;
+        transition-duration: 0.15s;
+        world-blur: ingameHudBlur;
+        z-index: -1;
+        transform: translate3d(-50%, 90px, 0px);
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
 }
 
 #BuffTimeHUD
