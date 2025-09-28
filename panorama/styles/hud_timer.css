@@ -179,7 +179,7 @@
         transition-duration: 0.15s;
         world-blur: ingameHudBlur;
         z-index: -1;
-        transform: translate3d(1.75%, 90px, 0px);
+        transform: translate3d(, 90px, 0px);
         border-top-right-radius: 12px;
         border-bottom-right-radius: 12px;
 }
@@ -199,7 +199,7 @@
         transition-duration: 0.15s;
         world-blur: ingameHudBlur;
         z-index: -1;
-        transform: translate3d(-1.75%, 90px, 0px);
+        transform: translate3d(calc(-1.75% + 0.5px), 90px, 0px);
         border-top-left-radius: 12px;
         border-bottom-left-radius: 12px;
 }
@@ -473,4 +473,5 @@
 {
 	opacity: 0;
 }
+
 
