@@ -8,6 +8,8 @@
   const REJUV_DURATION = 240;
   const BRIDGE_DURATION = 300;
   const SCAN_INTERVAL = 3;
+  const BASE_SCREEN_WIDTH = 1920;
+  const BASE_SCREEN_HEIGHT = 1080;
 
   const PREFERRED_GAME_TIME_IDS = ["HudGameTime", "GameTime", "MainGameTime"];
 
@@ -49,6 +51,9 @@
     let running = false;
     let spawnWaiting = false;
     let lastScanFound = false;
+    let resolutionWatchHandle = null;
+    let cachedScreenWidth = BASE_SCREEN_WIDTH;
+    let cachedScreenHeight = BASE_SCREEN_HEIGHT;
 
     // Timer handles
     let gateH = null;
@@ -77,6 +82,81 @@
 
     stopAll(true);
     scheduleGate(INITIAL_GATE_DELAY);
+    ApplyResolutionScaling();
+    ScheduleResolutionWatch();
+
+    // Applies resolution-aware translations and scaling to the timer panels.
+    function ApplyResolutionScaling() {
+      const activeWidth = GetScreenWidth();
+      const activeHeight = GetScreenHeight();
+      cachedScreenWidth = activeWidth;
+      cachedScreenHeight = activeHeight;
+      const scaleX = activeWidth / BASE_SCREEN_WIDTH;
+      const scaleY = activeHeight / BASE_SCREEN_HEIGHT;
+
+      const panelDescriptors = [
+        { id: "BuffHUD", x: -870, y: 90 },
+        { id: "RejuvHUD", x: 870, y: 90 }
+      ];
+
+      for (const descriptor of panelDescriptors) {
+        const targetPanel = root.FindChildTraverse(descriptor.id);
+
+        // Skip updates when the target panel is missing.
+        if (!targetPanel) {
+          continue;
+        }
+
+        targetPanel.style.transform = `translate3d(${descriptor.x * scaleX}px, ${descriptor.y * scaleY}px, 0px)`;
+      }
+    }
+
+    // Begins monitoring the resolution so the layout updates when values change.
+    function ScheduleResolutionWatch() {
+      // Clear any previous watch handle to avoid duplicate schedules.
+      if (resolutionWatchHandle) {
+        $.CancelScheduled(resolutionWatchHandle);
+      }
+
+      resolutionWatchHandle = $.Schedule(0.1, ResolutionWatchTick);
+    }
+
+    // Periodically applies scaling updates whenever the resolution differs.
+    function ResolutionWatchTick() {
+      const currentWidth = GetScreenWidth();
+      const currentHeight = GetScreenHeight();
+      let nextDelay = 0.5;
+
+      // Refresh the layout when the resolution has changed.
+      if (currentWidth !== cachedScreenWidth || currentHeight !== cachedScreenHeight) {
+        cachedScreenWidth = currentWidth;
+        cachedScreenHeight = currentHeight;
+        ApplyResolutionScaling();
+        nextDelay = 0.1;
+      }
+
+      resolutionWatchHandle = $.Schedule(nextDelay, ResolutionWatchTick);
+    }
+
+    // Provides the active screen width with a safe fallback value.
+    function GetScreenWidth() {
+      // Prefer the engine provided width when available.
+      if (typeof Game !== "undefined" && typeof Game.GetScreenWidth === "function") {
+        return Math.max(Game.GetScreenWidth(), 1);
+      }
+
+      return BASE_SCREEN_WIDTH;
+    }
+
+    // Provides the active screen height with a safe fallback value.
+    function GetScreenHeight() {
+      // Prefer the engine provided height when available.
+      if (typeof Game !== "undefined" && typeof Game.GetScreenHeight === "function") {
+        return Math.max(Game.GetScreenHeight(), 1);
+      }
+
+      return BASE_SCREEN_HEIGHT;
+    }
 
     function scheduleGate(delay) {
       if (gateH) { $.CancelScheduled(gateH); gateH = null; }
