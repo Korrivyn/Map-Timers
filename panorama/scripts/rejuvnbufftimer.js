@@ -10,14 +10,12 @@
   const SCAN_INTERVAL = 3;
   const BASE_SCREEN_WIDTH = 1920;
   const BASE_SCREEN_HEIGHT = 1080;
+  const HUD_WIDTH_RATIO = 0.035;
+  const HUD_MARGIN_RATIO = 0.012;
+  const HUD_VERTICAL_TRANSLATE_RATIO = BASE_TIMER_VERTICAL_TRANSLATE / BASE_SCREEN_HEIGHT;
 
   const PREFERRED_GAME_TIME_IDS = ["HudGameTime", "GameTime", "MainGameTime"];
-  const BASE_LEFT_TIMER_TRANSLATE = 870;
-  const BASE_RIGHT_TIMER_TRANSLATE = -870;
   const BASE_TIMER_VERTICAL_TRANSLATE = 90;
-  const LEFT_BASE_OFFSET = BASE_SCREEN_WIDTH * 0.5 - BASE_LEFT_TIMER_TRANSLATE;
-  const RIGHT_BASE_OFFSET = BASE_SCREEN_WIDTH + BASE_RIGHT_TIMER_TRANSLATE - BASE_SCREEN_WIDTH * 0.5;
-  const CENTERLINE_OFFSET = (LEFT_BASE_OFFSET + RIGHT_BASE_OFFSET) / 2;
 
   const SEQ = [
     { name: "initial", dur: 600, num: "1" },
@@ -91,7 +89,7 @@
     ApplyResolutionScaling();
     ScheduleResolutionWatch();
 
-    // Applies resolution-aware translations and scaling to the timer panels.
+    // Applies resolution-aware translations that keep the timers anchored to the screen center.
     function ApplyResolutionScaling() {
       const dimensions = GetLayoutDimensions();
       const layoutWidth = dimensions.width;
@@ -99,18 +97,23 @@
       cachedScreenWidth = layoutWidth;
       cachedScreenHeight = layoutHeight;
       const halfWidth = layoutWidth * 0.5;
-      const verticalScale = layoutHeight / BASE_SCREEN_HEIGHT;
-      const translatedY = BASE_TIMER_VERTICAL_TRANSLATE * verticalScale;
-      const leftTranslation = halfWidth - CENTERLINE_OFFSET;
-      const rightTranslation = CENTERLINE_OFFSET - halfWidth;
+      const translatedY = layoutHeight * HUD_VERTICAL_TRANSLATE_RATIO;
+      const buffPanel = root.FindChildTraverse("BuffHUD");
+      const rejuvPanel = root.FindChildTraverse("RejuvHUD");
+      const rightMarginRatio = GetMarginRatio(buffPanel, "marginRight", HUD_MARGIN_RATIO);
+      const leftMarginRatio = GetMarginRatio(rejuvPanel, "marginLeft", HUD_MARGIN_RATIO);
+      const rightWidthRatio = GetWidthRatio(buffPanel, layoutWidth, HUD_WIDTH_RATIO);
+      const leftWidthRatio = GetWidthRatio(rejuvPanel, layoutWidth, HUD_WIDTH_RATIO);
+      const rightTranslation = -(halfWidth - layoutWidth * (rightMarginRatio + rightWidthRatio));
+      const leftTranslation = halfWidth - layoutWidth * (leftMarginRatio + leftWidthRatio);
 
       const panelDescriptors = [
-        { id: "BuffHUD", translateX: rightTranslation },
-        { id: "RejuvHUD", translateX: leftTranslation }
+        { panel: buffPanel, translateX: rightTranslation },
+        { panel: rejuvPanel, translateX: leftTranslation }
       ];
 
       for (const descriptor of panelDescriptors) {
-        const targetPanel = root.FindChildTraverse(descriptor.id);
+        const targetPanel = descriptor.panel;
 
         // Skip updates when the target panel is missing.
         if (!targetPanel) {
@@ -119,6 +122,50 @@
 
         targetPanel.style.transform = `translate3d(${descriptor.translateX}px, ${translatedY}px, 0px)`;
       }
+    }
+
+    // Converts the specified margin style into a normalized ratio for layout scaling.
+    function GetMarginRatio(panel, propertyName, fallbackRatio) {
+      // Return the fallback when the panel is not available.
+      if (!panel) {
+        return fallbackRatio;
+      }
+
+      const styleValue = panel.style[propertyName];
+
+      // Attempt to parse percent based values for responsive layouts.
+      if (typeof styleValue === "string") {
+        const trimmed = styleValue.trim();
+
+        // Confirm the percentage before parsing the numeric portion.
+        if (trimmed.endsWith("%")) {
+          const numericPortion = Number(trimmed.slice(0, -1));
+
+          // Return the computed ratio when the parse succeeds.
+          if (!Number.isNaN(numericPortion)) {
+            return numericPortion / 100;
+          }
+        }
+      }
+
+      return fallbackRatio;
+    }
+
+    // Determines the relative width of a panel using layout information when available.
+    function GetWidthRatio(panel, containerWidth, fallbackRatio) {
+      // Avoid division by zero when the container size is unavailable.
+      if (!panel || containerWidth <= 0) {
+        return fallbackRatio;
+      }
+
+      const layoutWidth = panel.actuallayoutwidth;
+
+      // Use the computed layout width when Panorama has finished measuring.
+      if (layoutWidth > 0) {
+        return layoutWidth / containerWidth;
+      }
+
+      return fallbackRatio;
     }
 
     // Begins monitoring the resolution so the layout updates when values change.
